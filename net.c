@@ -5,11 +5,13 @@
 #include "util.h"
 #include "net.h"
 
+typedef void (*protocol_handler)(const uint8_t *data, size_t len, struct net_device *dev);
+
 struct net_protocol {
     struct net_protocol *next;
     uint16_t type;
     struct queue_head queue; /* input queue */
-    void (*handler)(const uint8_t *data, size_t len, struct net_device *dev);
+    protocol_handler handler;
 };
 
 struct net_protocol_queue_entry {
@@ -109,8 +111,36 @@ net_device_output(struct net_device *dev, uint16_t type, const uint8_t *data, si
 
 /* NOTE: must not be call after net_run() */
 int
-net_protocol_register(uint16_t type, void (*handler)(const uint8_t *data, size_t len, struct net_device *dev))
+net_protocol_register(uint16_t type, void (*handler)(const uint8_t *data, size_t len, struct net_device *dev)) {
+    struct net_protocol *p;
+    int registered = protocal_registered(type);
+    if (registered) {
+        errorf("protocol already registered, type=0x%04x", type);
+        return -1;
+    }
+    p = memory_alloc(sizeof(*p));
+    if (!p) {
+        errorf("memory_alloc() failure");
+        return -1;
+    }
+    p->type = type;
+    p->handler = handler;
+    p->next = protocols;
+    protocols = p;
+    infof("protocol registered, type=0x%04x", type);
+    return 0;
+}
+
+inline int protocal_registered(uint16_t type)
 {
+    struct net_protocol *p;
+
+    for (p = protocols; p; p = p->next) {
+        if (p->type == type) {
+            return 1;
+        }
+    }
+    return 0;
 }
 
 int
