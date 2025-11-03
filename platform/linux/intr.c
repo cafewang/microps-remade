@@ -6,6 +6,7 @@
 #include "platform.h"
 
 #include "util.h"
+#include "net.h"
 
 struct irq_entry {
     struct irq_entry *next;
@@ -89,6 +90,11 @@ intr_thread(void *arg)
             terminate = 1;
             continue;
         }
+        if (sig == SIGUSR1) {
+            debugf("handling softirq");
+            net_softirq_handler();
+            continue;
+        }
         for (entry = irqs; entry; entry = entry->next) {
             if (entry->irq == (unsigned int)sig) {
                 debugf("invoking handler for irq=%u, name=%s", entry->irq, entry->name);
@@ -141,5 +147,6 @@ intr_init(void)
     pthread_barrier_init(&barrier, NULL, 2);
     sigemptyset(&sigmask);
     sigaddset(&sigmask, SIGHUP);
+    sigaddset(&sigmask, SIGUSR1);
     return 0;
 }

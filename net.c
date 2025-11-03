@@ -107,13 +107,23 @@ net_device_output(struct net_device *dev, uint16_t type, const uint8_t *data, si
     return 0;
 }
 
+static int protocol_registered(uint16_t type)
+{
+    struct net_protocol *p;
 
+    for (p = protocols; p; p = p->next) {
+        if (p->type == type) {
+            return 1;
+        }
+    }
+    return 0;
+}
 
 /* NOTE: must not be call after net_run() */
 int
 net_protocol_register(uint16_t type, void (*handler)(const uint8_t *data, size_t len, struct net_device *dev)) {
     struct net_protocol *p;
-    int registered = protocal_registered(type);
+    int registered = protocol_registered(type);
     if (registered) {
         errorf("protocol already registered, type=0x%04x", type);
         return -1;
@@ -131,21 +141,48 @@ net_protocol_register(uint16_t type, void (*handler)(const uint8_t *data, size_t
     return 0;
 }
 
-inline int protocal_registered(uint16_t type)
-{
+int
+net_softirq_handler(void) {
     struct net_protocol *p;
+    struct net_protocol_queue_entry *e;
 
     for (p = protocols; p; p = p->next) {
-        if (p->type == type) {
-            return 1;
+        while (1) {
+            e = queue_pop(&p->queue);
+            if (!e) {
+                break;
+            }
+            debugf("queue poped(num left=%d), dev=%s, type=0x%04x, len=%zu", p->queue.num, e->dev->name, p->type, e->len);
+            p->handler(e->data, e->len, e->dev);
+            memory_free(e);
         }
     }
     return 0;
 }
 
-int
-net_input_handler(uint16_t type, const uint8_t *data, size_t len, struct net_device *dev)
-{
+
+int net_input_handler(uint16_t type, const uint8_t *data, size_t len, struct net_device *dev) {
+    struct net_protocol *p;
+    struct net_protocol_queue_entry *e;
+
+    for (p = protocols; p; p = p->next) {
+        if (p->type == type) {
+            e = memory_alloc(sizeof(*e) + len);
+            if (!e) {
+                errorf("memory_alloc() failure");
+                return -1;
+            }
+            e->dev = dev;
+            e->len = len;
+            memcpy(e->data, data, len);
+            queue_push(&p->queue, e);
+            debugf("input packet, dev=%s, type=0x%04x, len=%zu", dev->name, type, len);
+            debugdump(data, len);
+            intr_raise_irq(INTR_IRQ_SOFTIRQ);
+            return 0;
+        }
+    }
+    errorf("protocol not registered, type=0x%04x", type);
     return 0;
 }
 
@@ -185,6 +222,10 @@ net_init(void)
 {
     if (intr_init() == -1) {
         errorf("intr_init() failure");
+        return -1;
+    }
+    if (ip_init() == -1) {
+        errorf("ip_init() failure");
         return -1;
     }
     infof("initialized");
