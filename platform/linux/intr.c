@@ -25,6 +25,16 @@ static sigset_t sigmask;
 static pthread_t tid;
 static pthread_barrier_t barrier;
 
+
+static inline int init_irq_entry(struct irq_entry *entry, unsigned int irq, intr_handler handler, int flags, const char *name, void *dev) {
+    entry->irq = irq;
+    entry->handler = handler;
+    entry->flags = flags;
+    strncpy(entry->name, name, sizeof(entry->name) - 1);
+    entry->name[sizeof(entry->name) - 1] = '\0';
+    entry->dev = dev;
+}
+
 int
 intr_request_irq(unsigned int irq, intr_handler handler, int flags, const char *name, void *dev)
 {
@@ -52,15 +62,6 @@ intr_request_irq(unsigned int irq, intr_handler handler, int flags, const char *
     sigaddset(&sigmask, irq);
     debugf("irq registered, irq=%u, name=%s", irq, name);
     return 0;
-}
-
-inline int init_irq_entry(struct irq_entry *entry, unsigned int irq, intr_handler handler, int flags, const char *name, void *dev) {
-    entry->irq = irq;
-    entry->handler = handler;
-    entry->flags = flags;
-    strncpy(entry->name, name, sizeof(entry->name) - 1);
-    entry->name[sizeof(entry->name) - 1] = '\0';
-    entry->dev = dev;
 }
 
 int

@@ -131,18 +131,13 @@ static void ip_input(const uint8_t *data, size_t len, struct net_device *dev) {
         errorf("fragmented packet is not supported");
         return;
     }
-    for (iface = dev->ifaces; iface; iface = iface->next) {
-        if (NET_IFACE(iface)->family == NET_IFACE_FAMILY_IP) {
-            if (iface->unicast != hdr->dst && iface->broadcast != hdr->dst && iface->netmask != IP_ADDR_BROADCAST) {
-                debugf("not for me, skipping, dst=%s", ip_addr_ntop(hdr->dst, addr, sizeof(addr)));
-                return;
-            } else {
-                break;
-            }
-        }
-    }
+    iface = (struct ip_iface*)net_device_get_iface(dev, NET_IFACE_FAMILY_IP);
     if (!iface) {
         errorf("no IP iface on device");
+        return;
+    }
+    if (iface->unicast != hdr->dst && iface->broadcast != hdr->dst && hdr->dst != IP_ADDR_BROADCAST) {
+        infof("packet is not for me, src=%s, dst=%s", ip_addr_ntop(hdr->src, addr, sizeof(addr)), ip_addr_ntop(hdr->dst, addr, sizeof(addr)));
         return;
     }
     debugf("device: % s, protocol: % u, total: % u, src=%s, dst=%s", dev->name, hdr->protocol, total, ip_addr_ntop(hdr->src, addr, sizeof(addr)), ip_addr_ntop(hdr->dst, addr, sizeof(addr)));

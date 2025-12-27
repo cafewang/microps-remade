@@ -2,6 +2,7 @@
 #include <signal.h>
 #include <unistd.h>
 #include <assert.h>
+#include <string.h>
 
 #include "util.h"
 #include "net.h"
@@ -9,13 +10,13 @@
 
 #include "test.h"
 
-void address_conversion_test(void) {
+void test_address_conversion(void) {
     const char *ip_str = "192.168.1.3";
     ip_addr_t addr;
 
     if (ip_addr_pton(ip_str, &addr) == -1) {
         fprintf(stderr, "ip_addr_pton() failed\n");
-        return 1;
+        return;
     }
     assert(192 == *(uint8_t*)(&addr));
     assert(168 == *((uint8_t*)(&addr) + 1));
@@ -27,7 +28,14 @@ void address_conversion_test(void) {
     assert(0 == strcmp(ip_str, buf));
 }
 
-void check_sum_test(void) {
+void test_wrong_ip_format() {
+    ip_addr_t addr;
+    assert(-1 == ip_addr_pton("192.168.1.3.4", &addr));
+    assert(-1 == ip_addr_pton("192.168.1.300", &addr));
+    assert(-1 == ip_addr_pton("192.168.1.abc", &addr));
+}
+
+void test_check_sum(void) {
     uint16_t ip_hdr[2] = { hton16(0x0002), hton16(0x0001) };
     // 0x0002 + 0x0001 => 0x0003 inversion => 0xfffc
     // length is in bytes, so we use 4 (2 uint16_t)
@@ -38,7 +46,8 @@ void check_sum_test(void) {
 }
 
 int main(int argc, char *argv[]) {
-    address_conversion_test();
-    check_sum_test();
+    test_address_conversion();
+    test_wrong_ip_format();
+    test_check_sum();
     return 0;
 }

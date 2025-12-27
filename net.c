@@ -4,6 +4,7 @@
 
 #include "util.h"
 #include "net.h"
+#include "ip.h"
 
 typedef void (*protocol_handler)(const uint8_t *data, size_t len, struct net_device *dev);
 
