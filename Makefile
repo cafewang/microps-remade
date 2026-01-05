@@ -14,6 +14,7 @@ TESTS = test/step0.exe \
         test/step4.exe \
         test/ip_test.exe \
         test/step7.exe \
+        test/step8.exe \
 
 CFLAGS := $(CFLAGS) -g -W -Wall -Wno-unused-parameter -iquote . -DHEXDUMP
 
