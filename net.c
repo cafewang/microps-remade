@@ -5,6 +5,7 @@
 #include "util.h"
 #include "net.h"
 #include "ip.h"
+#include "icmp.h"
 
 typedef void (*protocol_handler)(const uint8_t *data, size_t len, struct net_device *dev);
 
@@ -227,6 +228,10 @@ net_init(void)
     }
     if (ip_init() == -1) {
         errorf("ip_init() failure");
+        return -1;
+    }
+    if (-1 == icmp_init()) {
+        errorf("icmp_init() failure");
         return -1;
     }
     infof("initialized");
