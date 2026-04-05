@@ -11,4 +11,8 @@
     } \
 } while (0)
 
+#define TEST_PASS do { \
+    fprintf(stdout, "Test passed for %s\n", __func__); \
+} while (0)
+
 #endif

@@ -71,4 +71,6 @@ intr_shutdown(void);
 extern int
 intr_init(void);
 
+extern sigset_t* get_intr_sigset();
+
 #endif

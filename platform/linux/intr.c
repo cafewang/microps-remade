@@ -151,3 +151,7 @@ intr_init(void)
     sigaddset(&sigmask, SIGUSR1);
     return 0;
 }
+
+sigset_t* get_intr_sigset() {
+    return &sigmask;
+}

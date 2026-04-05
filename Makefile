@@ -18,7 +18,8 @@ TESTS = test/step0.exe \
         test/step9.exe \
         test/net_init_test.exe
 
-UNIT_TESTS = unit_test/ip_test.exe
+UNIT_TESTS = unit_test/ip_test.exe \
+             unit_test/intr_test.exe \
 
 CFLAGS := $(CFLAGS) -g -W -Wall -Wno-unused-parameter -iquote . -DHEXDUMP
 
@@ -56,4 +57,7 @@ clean:
 	rm -rf $(APPS) $(APPS:.exe=.o) $(OBJS) $(DRIVERS) $(TESTS) $(TESTS:.exe=.o) $(UNIT_TESTS) $(UNIT_TESTS:.exe=.o)
 
 run_unit_tests: $(UNIT_TESTS)
-	./$^
+	@for test in $(UNIT_TESTS); do \
+		echo "Running $$test..."; \
+		./$$test || exit 1; \
+	done
