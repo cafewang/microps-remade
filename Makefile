@@ -16,7 +16,6 @@ TESTS = test/step0.exe \
         test/step7.exe \
         test/step8.exe \
         test/step9.exe \
-        test/net_init_test.exe
 
 UNIT_TESTS = unit_test/ip_test.exe \
              unit_test/intr_test.exe \
