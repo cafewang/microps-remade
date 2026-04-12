@@ -9,10 +9,10 @@ int get_thread_count() {
     char path[1035];
     int count = 0;
 
-    int tid = gettid();
+    int pid = getpid();
     char cmd[1024];
 
-    snprintf(cmd, sizeof(cmd), "ls -1 /proc/%d/task/ | wc -l", tid);
+    snprintf(cmd, sizeof(cmd), "ls -1 /proc/%d/task/ | wc -l", pid);
     fp = popen(cmd, "r");
     if (fp == NULL) {
         return -1;

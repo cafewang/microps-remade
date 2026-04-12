@@ -1,9 +1,12 @@
 #include <stdint.h>
 #include <stddef.h>
+#include <string.h>
 
 #include "util.h"
 #include "ip.h"
 #include "icmp.h"
+
+#define ICMP_BUFSIZ IP_PAYLOAD_SIZE_MAX
 
 struct icmp_hdr {
     uint8_t type;
@@ -91,7 +94,43 @@ void icmp_input(const uint8_t *data, size_t len, ip_addr_t src, ip_addr_t dst, s
 
     debugf("% s => % s, len = % zu", ip_addr_ntop(src, addr1, sizeof(addr1)), ip_addr_ntop(dst, addr2, sizeof(addr2)), len);
     icmp_dump(data, len);
+
+    switch (hdr->type) {
+        case ICMP_TYPE_ECHO:
+            icmp_output(ICMP_TYPE_ECHOREPLY, hdr->code, hdr->values, (uint8_t *)hdr + sizeof(*hdr), len - sizeof(*hdr), iface->unicast, src);
+            break;
+        default:
+            break;
+    }
 }
+
+size_t build_icmp_msg(struct icmp_hdr *hdr, uint8_t type, uint8_t code, uint32_t values, const uint8_t *data, size_t len) { 
+    hdr->type = type;
+    hdr->code = code;
+    hdr->sum = 0;
+    hdr->values = values;
+    if (data && len > 0) {
+        memcpy((uint8_t *)hdr + sizeof(*hdr), data, len);
+    }
+    hdr->sum = cksum16((uint16_t *)hdr, sizeof(*hdr) + len, 0); 
+    return sizeof(*hdr) + len;
+}
+
+int icmp_output(uint8_t type, uint8_t code, uint32_t values, const uint8_t *data, size_t len, ip_addr_t src, ip_addr_t dst) {
+    int8_t buf[ICMP_BUFSIZ];
+    struct icmp_hdr *hdr;
+    size_t msg_len;
+    char addr1[IP_ADDR_STR_LEN];
+    char addr2[IP_ADDR_STR_LEN];
+
+    hdr = (struct icmp_hdr *)buf;
+    msg_len = build_icmp_msg(hdr, type, code, values, data, len);
+    debugf("% s => % s, len = % zu", ip_addr_ntop(src, addr1, sizeof(addr1)), ip_addr_ntop(dst, addr2, sizeof(addr2)), msg_len);
+    icmp_dump((uint8_t *)hdr, msg_len);
+    return ip_output(IP_PROTOCOL_ICMP, buf, msg_len, src, dst);
+}
+
+
 
 int icmp_init(void) {
     return ip_protocol_register(IP_PROTOCOL_ICMP, icmp_input);
