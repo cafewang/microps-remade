@@ -39,6 +39,13 @@ net_device_alloc(void)
     return dev;
 }
 
+void net_device_free(struct net_device *dev) {
+    if (dev) {
+        memory_free(dev);
+    }
+    return 0;
+}
+
 /* NOTE: must not be call after net_run() */
 int
 net_device_register(struct net_device *dev)

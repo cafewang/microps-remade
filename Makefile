@@ -7,6 +7,7 @@ OBJS = util.o \
        net.o \
        ip.o \
        icmp.o \
+       ether.o \
 
 TESTS = test/step0.exe \
         test/step1.exe \
@@ -17,6 +18,7 @@ TESTS = test/step0.exe \
         test/step8.exe \
         test/step9.exe \
         test/step11.exe \
+        test/step12.exe \
 
 UNIT_TESTS = unit_test/ip_test.exe \
              unit_test/intr_test.exe \
@@ -28,6 +30,7 @@ ifeq ($(shell uname),Linux)
   BASE = platform/linux
   CFLAGS := $(CFLAGS) -pthread -iquote $(BASE)
   OBJS := $(OBJS) $(BASE)/intr.o
+  DRIVERS := $(DRIVERS) $(BASE)/driver/ether_tap.o
 endif
 
 ifeq ($(shell uname),Darwin)

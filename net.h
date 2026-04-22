@@ -71,6 +71,8 @@ struct net_iface {
 
 extern struct net_device *
 net_device_alloc(void);
+extern void 
+net_device_free(struct net_device *dev);
 extern int
 net_device_register(struct net_device *dev);
 extern int
